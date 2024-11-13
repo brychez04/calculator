@@ -2,11 +2,46 @@
 const maxWidth = document.getElementById('display-div').getBoundingClientRect().width - 83;
 const display = document.getElementById('inputs');
 
+//expression array
 let expression = ['', '', ''];
 let expPointer = 0;
 
+//number button event listeners
+const numbers = Array.from(document.getElementsByClassName("number"));
+numbers.map((number) =>{
+    if(number.id == "decimal") number.addEventListener("click", ()=> updateExpression("."));
+    else  number.addEventListener("click", ()=> updateExpression(number.innerHTML));
+});
 
-//keyboard support
+//operand button event listeners
+const operands = Array.from(document.getElementsByClassName("operand"));
+operands.map((operand) =>{
+    switch(operand.id){
+        case "add":
+            operand.addEventListener("click", () => updateExpression("+"));
+            break;
+        case "subtract":
+            operand.addEventListener("click", () => updateExpression("-"));
+            break;
+        case "multiply":
+            operand.addEventListener("click", () => updateExpression("*"));
+            break;
+        case "divide":
+            operand.addEventListener("click", () => updateExpression("/"));
+            break;
+        case "equals":
+            operand.addEventListener("click", () => updateExpression(calculate()));
+    }
+});
+
+//all clear, backspace button event listeners
+document.getElementById("allclear").addEventListener("click", (e) => allclear());
+document.getElementById("backspace").addEventListener("click", (e) => backspace());
+
+
+
+
+//keyboard event listeners
 window.addEventListener("keydown", (e) =>{
     //backspace
     if(e.key == "Backspace"){
@@ -35,6 +70,7 @@ function backspace(){
     if(expression[expPointer] == "") return;
     expression[expPointer] = expression[expPointer].substring(0, expression[expPointer].length - 1);
     display.innerHTML = expression[expPointer];
+    overflow(expression[expPointer]);
 }
 
 function allclear(){
@@ -83,35 +119,54 @@ function updateExpression(input){
         expression[0] = "";
     }
 
-    if(!isNaN(input)) expression[expPointer] += input;
-
+    if(!isNaN(input)){
+        if(input == "0"){
+            if(expression[expPointer] != "0") expression[expPointer] += input;
+        }else expression[expPointer] += input;
+    } 
+    
     if(input == "."){
-        if (Number.isInteger(expression[expPointer]) || expression[expPointer] == "") 
-            expression[expPointer] += ".";
+        if (!expression[expPointer].includes(".")) expression[expPointer] += ".";
     }
-
+    let updateFromNewOperand = false;
     if(isOperand(input)){
-        if(expression[0] != ""){
+        if(expression[0] != "" && expression[0] != "."){
             if(expression[2] != ""){
                 expression[0] = calculate();
-                expression[2] = ""; 
+                expression[2] = "";
+                updateFromNewOperand = true;
             }
             expPointer = 2;
             expression[1] = input;
-        }
+        }else return;
     }
+    if(updateFromNewOperand == true) display.innerHTML = expression[0];
+    else display.innerHTML = expression[expPointer];
 
-    display.innerHTML = expression[expPointer];
-    //overflow, using e notation (Example 300 = 3*10^2 = 3e2)
+    //overflow control, using E notation (Example 300 = 3*10^2 = 3 E2)
+    overflow(expression[expPointer]);
+    console.log(expression);
+}
+
+function overflow(displayNum){
     if(display.getBoundingClientRect().width > maxWidth + 80){
         let e = 0;
-        while(display.getBoundingClientRect().width > maxWidth){
-            e++;
-            display.innerHTML = display.innerHTML.substring(0, display.innerHTML.length - 1);
+        displayNum = (Number(displayNum).toFixed(6));
+        display.innerHTML = displayNum;
+        if(display.getBoundingClientRect().width > maxWidth){
+            while(display.getBoundingClientRect().width > maxWidth){
+                if(e == "") e = 0;
+                e++;
+                display.innerHTML = display.innerHTML.substring(0, display.innerHTML.length - 1);
+                displayNum /= 10;
+            }
+            display.innerHTML = displayNum;
+    
+            while(display.getBoundingClientRect().width > maxWidth) display.innerHTML = display.innerHTML.substring(0, display.innerHTML.length - 1);
+            display.innerHTML += " e" + e;
         }
-        display.innerHTML += " e" + e;
+        else display.innerHTML = displayNum;
     }
-    console.log(expression);
 }
 
 function validExpression(expression){

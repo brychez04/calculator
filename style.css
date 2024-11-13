@@ -7,6 +7,10 @@ body{
 
 }
 
+button{
+    all:unset;
+}
+
 @font-face {
     font-family: "digital display";
     src: url(font/digital-7.ttf);
